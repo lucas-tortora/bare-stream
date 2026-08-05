@@ -23,331 +23,1083 @@ const stream = new Readable({
 stream.on('data', (data) => console.log(data))
 ```
 
+<!-- bare-refgen:api start -->
+
 ## API
 
-The classic stream classes and helpers are exported from `bare-stream` and follow the Node.js `stream` API. See <https://nodejs.org/api/stream.html> and <https://github.com/mafintosh/streamx> for the complete behavior; the additions and differences specific to this module are documented below.
+### Stream basics
 
-#### `const stream = new Readable([options])`
+#### `_destroy(err: Error | null, cb: StreamCallback): void`
 
-A readable stream. Options include:
+**Parameters**
 
-```js
-options = {
-  eagerOpen: false,
-  highWaterMark: 16384,
-  encoding: null,
-  signal: null,
-  open(cb) {},
-  read(size) {},
-  predestroy() {},
-  destroy(err, cb) {}
-}
-```
+| Parameter | Type             | Default | Description                                                                  |
+| --------- | ---------------- | ------- | ---------------------------------------------------------------------------- |
+| `err`     | `Error \| null`  | —       | The error the stream is being destroyed with, or `null` for a clean destroy. |
+| `cb`      | `StreamCallback` | —       | Called with an error, or `null` on success.                                  |
 
-If `encoding` is set, emitted data is decoded to strings using that encoding. If `signal` is an `AbortSignal`, the stream is destroyed when the signal aborts.
+#### `_open(cb: StreamCallback): void`
 
-#### `stream.closed`
+**Parameters**
 
-`true` when the stream is no longer readable.
+| Parameter | Type             | Default | Description                                             |
+| --------- | ---------------- | ------- | ------------------------------------------------------- |
+| `cb`      | `StreamCallback` | —       | Called with an error, or `null`, once opening finishes. |
 
-#### `stream.errored`
+#### `_predestroy(): void`
 
-The error the stream was destroyed with, or `null`.
+#### `destroy(err?: Error | null): void`
 
-#### `stream.push(data[, encoding])`
+**Parameters**
 
-Push `data` into the stream's internal buffer. If `data` is a string, it is encoded to a `Buffer` using `encoding`, defaulting to `'utf8'`. Push `null` to signal the end of the stream.
+| Parameter | Type            | Default | Description                                                                    |
+| --------- | --------------- | ------- | ------------------------------------------------------------------------------ |
+| `err?`    | `Error \| null` | —       | The error to destroy the stream with; omit or pass `null` for a clean destroy. |
 
-#### `stream.unshift(data[, encoding])`
+#### `destroyed: boolean`
 
-Like `stream.push()` but prepends `data` to the internal buffer so it is read before any already buffered data.
+#### `destroying: boolean`
 
-#### `Readable.from(data[, options])`
+#### `readable: boolean`
 
-Create a readable stream from `data`, which may be a value, an array of values, or an async iterable.
+#### `writable: boolean`
 
-#### `Readable.isBackpressured(stream)`
+### Stream utilities
 
-#### `Readable.isPaused(stream)`
-
-#### `Readable.fromWeb(readableStream[, options])`
-
-Convert a web `ReadableStream` into a `Readable`. Options include:
-
-```js
-options = {
-  encoding: null,
-  signal: null
-}
-```
-
-#### `Readable.toWeb(readable[, options])`
-
-Convert a `Readable` into a web `ReadableStream`. Options include:
-
-```js
-options = {
-  strategy: null
-}
-```
-
-`strategy` is a custom queuing strategy passed through to the `ReadableStream` constructor.
-
-#### `const stream = new Writable([options])`
-
-A writable stream. Options include:
-
-```js
-options = {
-  eagerOpen: false,
-  signal: null,
-  open(cb) {},
-  write(data, encoding, cb) {},
-  writev(batch, cb) {},
-  final(cb) {},
-  predestroy() {},
-  destroy(err, cb) {}
-}
-```
-
-#### `stream.closed`
-
-`true` when the stream is no longer writable.
-
-#### `stream.errored`
-
-The error the stream was destroyed with, or `null`.
-
-#### `stream.write(data[, encoding][, cb])`
-
-Write `data` to the stream. If `data` is a string, it is encoded using `encoding`, defaulting to `'utf8'`. Returns `false` if the stream is backpressured. The optional `cb` is called once the write has drained.
-
-#### `stream.end([data][, encoding][, cb])`
-
-Signal that no more data will be written. If `data` is provided it is written first. The optional `cb` is called once the stream has finished.
-
-#### `Writable.isBackpressured(stream)`
-
-#### `Writable.drained(stream)`
-
-Returns a promise that resolves once the stream has drained.
-
-#### `Writable.fromWeb(writableStream[, options])`
-
-Convert a web `WritableStream` into a `Writable`. Options include:
-
-```js
-options = {
-  signal: null
-}
-```
-
-#### `Writable.toWeb(writable)`
-
-Convert a `Writable` into a web `WritableStream`.
-
-#### `const stream = new Duplex([options])`
-
-A stream that is both readable and writable. Accepts the combined options of `Readable` and `Writable`.
-
-#### `Duplex.fromWeb({ readable, writable }[, options])`
-
-Convert a pair of web `ReadableStream` and `WritableStream` into a `Duplex`.
-
-#### `Duplex.toWeb(duplex)`
-
-Convert a `Duplex` into a `{ readable, writable }` pair of web streams.
-
-#### `const stream = new Transform([options])`
-
-A duplex stream where output is computed from input. Options include the `Duplex` options plus:
-
-```js
-options = {
-  transform(data, encoding, cb) {},
-  flush(cb) {}
-}
-```
-
-If no `transform` is provided, the stream acts as a pass-through.
-
-#### `const stream = new PassThrough([options])`
-
-A `Transform` that forwards input to output unchanged.
-
-#### `const [a, b] = duplexPair([options])`
-
-Create a pair of linked `Duplex` streams. Data written to `a` is readable from `b` and vice versa. `options` are passed to each side.
-
-#### `stream.pipeline(streams[, cb])`
-
-#### `stream.pipeline(...streams[, cb])`
-
-Pipe a series of streams together, propagating errors and cleaning up on completion. `streams` is a `Readable` source, zero or more `Duplex` transforms, and a `Writable` destination. Returns the destination stream. `cb` is called when the pipeline finishes or errors.
-
-#### `const detach = stream.finished(stream[, options], cb)`
-
-Invoke `cb` once `stream` is no longer readable or writable, or has errored. Returns a function that detaches the listeners. Options include:
-
-```js
-options = {
-  cleanup: false
-}
-```
-
-When `cleanup` is `true`, the listeners are detached automatically once `cb` runs.
-
-#### `stream.addAbortSignal(signal, stream)`
+#### `Stream.addAbortSignal<S extends Stream>(signal: AbortSignal, stream: S): S`
 
 Destroy `stream` when `signal` aborts, using `signal.reason` as the destruction error. Returns `stream`.
 
-#### `stream.isStream(stream)`
+**Parameters**
 
-#### `stream.isEnding(stream)`
+| Parameter | Type          | Default | Description                                        |
+| --------- | ------------- | ------- | -------------------------------------------------- |
+| `signal`  | `AbortSignal` | —       | The `AbortSignal` that destroys `stream` on abort. |
+| `stream`  | `S`           | —       | The stream to destroy when `signal` aborts.        |
 
-#### `stream.isEnded(stream)`
+#### `Stream.duplexPair(opts?: DuplexOptions): [Duplex, Duplex]`
 
-#### `stream.isFinishing(stream)`
+Create a pair of linked `Duplex` streams. Data written to `a` is readable from `b` and vice versa. `options` are passed to each side.
 
-#### `stream.isFinished(stream)`
+**Parameters**
 
-#### `stream.isDisturbed(stream)`
+| Parameter | Type            | Default | Description                      |
+| --------- | --------------- | ------- | -------------------------------- |
+| `opts?`   | `DuplexOptions` | —       | Passed to both ends of the pair. |
 
-#### `stream.isErrored(stream)`
+#### `Stream.finished(stream: Stream, opts: { cleanup?: boolean }, cb: StreamCallback): () => void`
 
-#### `stream.isReadable(stream)`
+Invoke `cb` once `stream` is no longer readable or writable, or has errored. Returns a function that detaches the listeners.
 
-#### `stream.isWritable(stream)`
+Overloads:
 
-State predicates for streams. Each returns a boolean.
+```ts
+Stream.finished(stream: Stream, opts: { cleanup?: boolean }, cb: StreamCallback): () => void
+Stream.finished(stream: Stream, cb: StreamCallback): () => void
+```
 
-#### `const err = stream.getStreamError(stream[, options])`
+**Parameters**
 
-Return the error a stream was destroyed with, or `null`. Options include:
+| Parameter | Type                    | Default | Description                                                               |
+| --------- | ----------------------- | ------- | ------------------------------------------------------------------------- |
+| `stream`  | `Stream`                | —       | The stream to wait on.                                                    |
+| `opts`    | `{ cleanup?: boolean }` | —       | Set `cleanup: true` to detach the listeners automatically once `cb` runs. |
+| `cb`      | `StreamCallback`        | —       | Called with an error, or `null`, once `stream` finishes.                  |
 
-```js
-options = {
-  all: false
+#### `Stream.getStreamError(stream: Stream, opts?: { all?: boolean }): Error | null`
+
+Return the error a stream was destroyed with, or `null`.
+
+**Parameters**
+
+| Parameter | Type                | Default | Description            |
+| --------- | ------------------- | ------- | ---------------------- |
+| `stream`  | `Stream`            | —       | The stream to inspect. |
+| `opts?`   | `{ all?: boolean }` | —       | —                      |
+
+#### `Stream.isDisturbed(stream: Stream): boolean`
+
+**Parameters**
+
+| Parameter | Type     | Default | Description         |
+| --------- | -------- | ------- | ------------------- |
+| `stream`  | `Stream` | —       | The stream to test. |
+
+#### `Stream.isEnded(stream: Stream): boolean`
+
+**Parameters**
+
+| Parameter | Type     | Default | Description         |
+| --------- | -------- | ------- | ------------------- |
+| `stream`  | `Stream` | —       | The stream to test. |
+
+#### `Stream.isErrored(stream: Stream): boolean`
+
+**Parameters**
+
+| Parameter | Type     | Default | Description         |
+| --------- | -------- | ------- | ------------------- |
+| `stream`  | `Stream` | —       | The stream to test. |
+
+#### `Stream.isFinished(stream: Stream): boolean`
+
+**Parameters**
+
+| Parameter | Type     | Default | Description         |
+| --------- | -------- | ------- | ------------------- |
+| `stream`  | `Stream` | —       | The stream to test. |
+
+#### `Stream.isReadable(stream: Stream): boolean`
+
+**Parameters**
+
+| Parameter | Type     | Default | Description         |
+| --------- | -------- | ------- | ------------------- |
+| `stream`  | `Stream` | —       | The stream to test. |
+
+#### `Stream.isStream(stream: unknown): stream is Stream`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description         |
+| --------- | --------- | ------- | ------------------- |
+| `stream`  | `unknown` | —       | The stream to test. |
+
+#### `Stream.isWritable(stream: Stream): boolean`
+
+Return `true` if `stream` is writable.
+
+**Parameters**
+
+| Parameter | Type     | Default | Description         |
+| --------- | -------- | ------- | ------------------- |
+| `stream`  | `Stream` | —       | The stream to test. |
+
+#### `Stream.pipeline<S extends Writable>(streams: Pipeline<S>, cb?: StreamCallback): S`
+
+Pipe a series of streams together, propagating errors and cleaning up on completion. `streams` is a `Readable` source, zero or more `Duplex` transforms, and a `Writable` destination. Returns the destination stream. `cb` is called when the pipeline finishes or errors.
+
+Overloads:
+
+```ts
+Stream.pipeline<S extends Writable>(streams: Pipeline<S>, cb?: StreamCallback): S
+Stream.pipeline<S extends Writable>(...args: Pipeline<S>): S
+Stream.pipeline<S extends Writable>(...args: [...Pipeline<S>, cb: StreamCallback]): S
+```
+
+**Parameters**
+
+| Parameter | Type             | Default | Description                                                                          |
+| --------- | ---------------- | ------- | ------------------------------------------------------------------------------------ |
+| `streams` | `Pipeline<S>`    | —       | A `Readable` source, zero or more `Duplex` transforms, and a `Writable` destination. |
+| `cb?`     | `StreamCallback` | —       | Called with an error, or `null`, once the pipeline finishes or errors.               |
+
+### Readable streams
+
+#### `new Readable(opts?: ReadableOptions)`
+
+A readable stream.
+
+**Parameters**
+
+| Parameter | Type              | Default | Description |
+| --------- | ----------------- | ------- | ----------- |
+| `opts?`   | `ReadableOptions` | —       | —           |
+
+#### `_read(size: number): void`
+
+**Parameters**
+
+| Parameter | Type     | Default | Description |
+| --------- | -------- | ------- | ----------- |
+| `size`    | `number` | —       | —           |
+
+#### `Readable.closed: boolean`
+
+`true` when the stream is no longer readable.
+
+#### `Readable.errored: Error | null`
+
+The error the stream was destroyed with, or `null`.
+
+#### `pause(): this`
+
+#### `pipe<S extends Writable>(dest: S, cb?: StreamCallback): S`
+
+**Parameters**
+
+| Parameter | Type             | Default | Description                                 |
+| --------- | ---------------- | ------- | ------------------------------------------- |
+| `dest`    | `S`              | —       | The destination stream to write into.       |
+| `cb?`     | `StreamCallback` | —       | Called with an error, or `null` on success. |
+
+#### `push(data: unknown | null, encoding?: BufferEncoding): boolean`
+
+Push `data` into the stream's internal buffer. If `data` is a string, it is encoded to a `Buffer` using `encoding`, defaulting to `'utf8'`. Push `null` to signal the end of the stream.
+
+**Parameters**
+
+| Parameter   | Type              | Default | Description                                                                   |
+| ----------- | ----------------- | ------- | ----------------------------------------------------------------------------- |
+| `data`      | `unknown \| null` | —       | Data to add to the buffer, or `null` to end the stream.                       |
+| `encoding?` | `BufferEncoding`  | —       | Encoding used to convert a string `data` to a `Buffer`; defaults to `'utf8'`. |
+
+#### `read(): unknown | null`
+
+#### `Readable.from`
+
+```ts
+Readable.from(data: unknown | unknown[] | AsyncIterable<unknown>, opts?: ReadableOptions): Readable
+```
+
+Create a readable stream from `data`, which may be a value, an array of values, or an async iterable.
+
+**Parameters**
+
+| Parameter | Type                                             | Default | Description                                               |
+| --------- | ------------------------------------------------ | ------- | --------------------------------------------------------- |
+| `data`    | `unknown \| unknown[] \| AsyncIterable<unknown>` | —       | A value, array of values, or async iterable to read from. |
+| `opts?`   | `ReadableOptions`                                | —       | —                                                         |
+
+#### `Readable.fromWeb(readableStream: ReadableStream, opts?: ReadableFromWebOptions): Readable`
+
+Convert a web `ReadableStream` into a `Readable`.
+
+**Parameters**
+
+| Parameter        | Type                     | Default | Description                                                                               |
+| ---------------- | ------------------------ | ------- | ----------------------------------------------------------------------------------------- |
+| `readableStream` | `ReadableStream`         | —       | The web `ReadableStream` to convert.                                                      |
+| `opts?`          | `ReadableFromWebOptions` | —       | Options for the conversion; supports `encoding` and `signal`, matching `ReadableOptions`. |
+
+#### `Readable.isBackpressured(rs: Readable): boolean`
+
+**Parameters**
+
+| Parameter | Type       | Default | Description          |
+| --------- | ---------- | ------- | -------------------- |
+| `rs`      | `Readable` | —       | The stream to check. |
+
+#### `Readable.isPaused(rs: Readable): boolean`
+
+**Parameters**
+
+| Parameter | Type       | Default | Description          |
+| --------- | ---------- | ------- | -------------------- |
+| `rs`      | `Readable` | —       | The stream to check. |
+
+#### `Readable.toWeb(readable: Readable, opts?: ReadableToWebOptions): ReadableStream`
+
+Convert a `Readable` into a web `ReadableStream`.
+
+**Parameters**
+
+| Parameter  | Type                   | Default | Description                                                                                                             |
+| ---------- | ---------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `readable` | `Readable`             | —       | The `Readable` to convert.                                                                                              |
+| `opts?`    | `ReadableToWebOptions` | —       | Options for the conversion; `strategy` is a custom queuing strategy passed through to the `ReadableStream` constructor. |
+
+#### `resume(): this`
+
+#### `setEncoding(encoding: BufferEncoding): void`
+
+**Parameters**
+
+| Parameter  | Type             | Default | Description                                      |
+| ---------- | ---------------- | ------- | ------------------------------------------------ |
+| `encoding` | `BufferEncoding` | —       | Encoding used to decode emitted data to strings. |
+
+#### `unshift(data: unknown | null, encoding?: BufferEncoding): boolean`
+
+Like `stream.push()` but prepends `data` to the internal buffer so it is read before any already buffered data.
+
+**Parameters**
+
+| Parameter   | Type              | Default | Description                                                                   |
+| ----------- | ----------------- | ------- | ----------------------------------------------------------------------------- |
+| `data`      | `unknown \| null` | —       | Data to prepend to the buffer, or `null` to end the stream.                   |
+| `encoding?` | `BufferEncoding`  | —       | Encoding used to convert a string `data` to a `Buffer`; defaults to `'utf8'`. |
+
+### Writable streams
+
+#### `new Writable(opts?: WritableOptions)`
+
+A writable stream.
+
+**Parameters**
+
+| Parameter | Type              | Default | Description |
+| --------- | ----------------- | ------- | ----------- |
+| `opts?`   | `WritableOptions` | —       | —           |
+
+#### `_final(cb: StreamCallback): void`
+
+**Parameters**
+
+| Parameter | Type             | Default | Description                                 |
+| --------- | ---------------- | ------- | ------------------------------------------- |
+| `cb`      | `StreamCallback` | —       | Called with an error, or `null` on success. |
+
+#### `_write(data: unknown, encoding: StreamEncoding, cb: StreamCallback): void`
+
+**Parameters**
+
+| Parameter  | Type             | Default | Description                                              |
+| ---------- | ---------------- | ------- | -------------------------------------------------------- |
+| `data`     | `unknown`        | —       | The chunk to write.                                      |
+| `encoding` | `StreamEncoding` | —       | Encoding of `data`, or `'buffer'` if it is not a string. |
+| `cb`       | `StreamCallback` | —       | Called with an error, or `null` on success.              |
+
+#### `_writev(batch: { chunk: unknown; encoding: StreamEncoding }[], cb: StreamCallback): void`
+
+**Parameters**
+
+| Parameter | Type                                             | Default | Description                                                   |
+| --------- | ------------------------------------------------ | ------- | ------------------------------------------------------------- |
+| `batch`   | `{ chunk: unknown; encoding: StreamEncoding }[]` | —       | Queued chunks to write, each with its `chunk` and `encoding`. |
+| `cb`      | `StreamCallback`                                 | —       | Called with an error, or `null` on success.                   |
+
+#### `Writable.closed: boolean`
+
+`true` when the stream is no longer writable.
+
+#### `cork(): void`
+
+#### `end(cb?: StreamCallback): this`
+
+Signal that no more data will be written. If `data` is provided it is written first. The optional `cb` is called once the stream has finished.
+
+Overloads:
+
+```ts
+end(cb?: StreamCallback): this
+end(data: unknown, encoding?: BufferEncoding, cb?: StreamCallback): this
+end(data: unknown, cb?: StreamCallback): this
+```
+
+**Parameters**
+
+| Parameter | Type             | Default | Description                                                    |
+| --------- | ---------------- | ------- | -------------------------------------------------------------- |
+| `cb?`     | `StreamCallback` | —       | Called with an error, or `null`, once the stream has finished. |
+
+#### `Writable.errored: Error | null`
+
+The error the stream was destroyed with, or `null`.
+
+#### `uncork(): void`
+
+#### `Writable.drained(ws: Writable): Promise<boolean>`
+
+Returns a promise that resolves once the stream has drained.
+
+**Parameters**
+
+| Parameter | Type       | Default | Description            |
+| --------- | ---------- | ------- | ---------------------- |
+| `ws`      | `Writable` | —       | The stream to wait on. |
+
+#### `Writable.fromWeb(writableStream: WritableStream, opts?: WritableFromWebOptions): Writable`
+
+Convert a web `WritableStream` into a `Writable`.
+
+**Parameters**
+
+| Parameter        | Type                     | Default | Description                                                                |
+| ---------------- | ------------------------ | ------- | -------------------------------------------------------------------------- |
+| `writableStream` | `WritableStream`         | —       | The web `WritableStream` to convert.                                       |
+| `opts?`          | `WritableFromWebOptions` | —       | Options for the conversion; supports `signal`, matching `WritableOptions`. |
+
+#### `Writable.isBackpressured(ws: Writable): boolean`
+
+**Parameters**
+
+| Parameter | Type       | Default | Description          |
+| --------- | ---------- | ------- | -------------------- |
+| `ws`      | `Writable` | —       | The stream to check. |
+
+#### `Writable.toWeb(writable: Writable): WritableStream`
+
+Convert a `Writable` into a web `WritableStream`.
+
+**Parameters**
+
+| Parameter  | Type       | Default | Description                |
+| ---------- | ---------- | ------- | -------------------------- |
+| `writable` | `Writable` | —       | The `Writable` to convert. |
+
+#### `write(data: unknown, encoding?: BufferEncoding, cb?: StreamCallback): boolean`
+
+Write `data` to the stream. If `data` is a string, it is encoded using `encoding`, defaulting to `'utf8'`. Returns `false` if the stream is backpressured. The optional `cb` is called once the write has drained.
+
+Overloads:
+
+```ts
+write(data: unknown, encoding?: BufferEncoding, cb?: StreamCallback): boolean
+write(data: unknown, cb?: StreamCallback): boolean
+```
+
+**Parameters**
+
+| Parameter   | Type             | Default | Description                                                                   |
+| ----------- | ---------------- | ------- | ----------------------------------------------------------------------------- |
+| `data`      | `unknown`        | —       | Data to write. If a string, it is encoded using `encoding`.                   |
+| `encoding?` | `BufferEncoding` | —       | Encoding used to convert a string `data` to a `Buffer`; defaults to `'utf8'`. |
+| `cb?`       | `StreamCallback` | —       | Called with an error, or `null`, once the write has drained.                  |
+
+### Duplex and Transform streams
+
+#### `new Duplex(opts?: DuplexOptions)`
+
+A stream that is both readable and writable. Accepts the combined options of `Readable` and `Writable`.
+
+**Parameters**
+
+| Parameter | Type            | Default | Description |
+| --------- | --------------- | ------- | ----------- |
+| `opts?`   | `DuplexOptions` | —       | —           |
+
+#### `Duplex.fromWeb`
+
+```ts
+Duplex.fromWeb({ readable: ReadableStream, writable: Writable }, opts?: DuplexFromWebOptions): Readable
+```
+
+Convert a pair of web `ReadableStream` and `WritableStream` into a `Duplex`.
+
+**Parameters**
+
+| Parameter                                          | Type                   | Default | Description                                                                                                     |
+| -------------------------------------------------- | ---------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `{ readable: ReadableStream, writable: Writable }` | `any`                  | —       | - Options for the conversion; combines the `Readable` and `Writable` conversion options (`encoding`, `signal`). |
+| `opts?`                                            | `DuplexFromWebOptions` | —       | Options for the conversion; combines the `Readable` and `Writable` conversion options (`encoding`, `signal`).   |
+
+#### `Duplex.toWeb(readable: Readable, opts?: ReadableToWebOptions): ReadableStream`
+
+**Parameters**
+
+| Parameter  | Type                   | Default | Description |
+| ---------- | ---------------------- | ------- | ----------- |
+| `readable` | `Readable`             | —       | —           |
+| `opts?`    | `ReadableToWebOptions` | —       | —           |
+
+#### `new Transform(opts?: TransformOptions)`
+
+A duplex stream where output is computed from input.
+
+**Parameters**
+
+| Parameter | Type               | Default | Description |
+| --------- | ------------------ | ------- | ----------- |
+| `opts?`   | `TransformOptions` | —       | —           |
+
+#### `_flush(cb: StreamCallback): void`
+
+**Parameters**
+
+| Parameter | Type             | Default | Description                                              |
+| --------- | ---------------- | ------- | -------------------------------------------------------- |
+| `cb`      | `StreamCallback` | —       | Called with an error, or `null`, once flushing finishes. |
+
+#### `_transform(data: unknown, encoding: StreamEncoding, cb: StreamCallback): void`
+
+**Parameters**
+
+| Parameter  | Type             | Default | Description                                              |
+| ---------- | ---------------- | ------- | -------------------------------------------------------- |
+| `data`     | `unknown`        | —       | The chunk to transform.                                  |
+| `encoding` | `StreamEncoding` | —       | Encoding of `data`, or `'buffer'` if it is not a string. |
+| `cb`       | `StreamCallback` | —       | Called with an error, or `null` on success.              |
+
+### Events
+
+#### `StreamEvents`
+
+```ts
+interface StreamEvents {
+  close: []
+  error: [err: Error]
 }
 ```
 
-### Promises
+#### `ReadableEvents`
 
-A promise-based variant of `pipeline` is available from `bare-stream/promises`.
+```ts
+interface ReadableEvents {
+  data: [data: unknown]
+  end: []
+  readable: []
+  piping: [dest: Writable]
+  close: []
+  error: [err: Error]
+}
+```
 
-#### `const stream = await pipeline(streams)`
+#### `WritableEvents`
 
-#### `const stream = await pipeline(...streams)`
+```ts
+interface WritableEvents {
+  drain: []
+  finish: []
+  pipe: [src: Readable]
+  close: []
+  error: [err: Error]
+}
+```
 
-Like `stream.pipeline()` but returns a promise that resolves with the destination stream once the pipeline finishes, or rejects on error.
+#### `DuplexEvents`
 
-### Web
+```ts
+interface DuplexEvents {
+  data: [data: unknown]
+  end: []
+  readable: []
+  piping: [dest: Writable]
+  close: []
+  error: [err: Error]
+  drain: []
+  finish: []
+  pipe: [src: Readable]
+}
+```
 
-A `node:stream/web`-compatible implementation of the WHATWG Streams Standard is available from `bare-stream/web`. See <https://streams.spec.whatwg.org> for the complete behavior.
+#### `TransformEvents`
 
-#### `const stream = new ReadableStream([underlyingSource][, queuingStrategy])`
+```ts
+interface TransformEvents {
+  data: [data: unknown]
+  end: []
+  readable: []
+  piping: [dest: Writable]
+  close: []
+  error: [err: Error]
+  drain: []
+  finish: []
+  pipe: [src: Readable]
+}
+```
 
-A web readable stream. `underlyingSource` may provide `start`, `pull`, and `cancel` methods, or be an existing `streamx` stream to wrap. `queuingStrategy` defaults to a `CountQueuingStrategy`.
+### Options
 
-#### `stream.locked`
+#### `StreamOptions`
 
-#### `stream.getReader()`
+```ts
+interface StreamOptions<S extends Stream = Stream> {
+  eagerOpen?: boolean
+  signal?: AbortSignal
+  open?(this: S, cb: StreamCallback): void
+  predestroy?(this: S): void
+  destroy?(this: S, err: Error | null, cb: StreamCallback): void
+}
+```
 
-Acquire a `ReadableStreamDefaultReader`. Throws if the stream is already locked.
+#### `ReadableOptions`
 
-#### `stream.cancel([reason])`
+```ts
+interface ReadableOptions<S extends Readable = Readable> {
+  encoding?: BufferEncoding
+  highWaterMark?: number
+  read?(this: S, size: number): void
+  eagerOpen?: boolean
+  signal?: AbortSignal
+  open?(this: S, cb: StreamCallback): void
+  predestroy?(this: S): void
+  destroy?(this: S, err: Error | null, cb: StreamCallback): void
+}
+```
 
-#### `stream.tee()`
+#### `WritableOptions`
 
-Split the stream into two independent `ReadableStream` branches.
+```ts
+interface WritableOptions<S extends Writable = Writable> {
+  write?(this: S, data: unknown, encoding: StreamEncoding, cb: StreamCallback): void
+  writev?(this: S, batch: { chunk: unknown; encoding: StreamEncoding }[], cb: StreamCallback): void
+  final?(this: S, cb: StreamCallback): void
+  eagerOpen?: boolean
+  signal?: AbortSignal
+  open?(this: S, cb: StreamCallback): void
+  predestroy?(this: S): void
+  destroy?(this: S, err: Error | null, cb: StreamCallback): void
+}
+```
 
-#### `stream.pipeTo(destination)`
+#### `DuplexOptions`
 
-Pipe the stream to a `WritableStream`, returning a promise that resolves once piping completes.
+```ts
+interface DuplexOptions<S extends Duplex = Duplex> {
+  encoding?: BufferEncoding
+  highWaterMark?: number
+  read?(this: S, size: number): void
+  eagerOpen?: boolean
+  signal?: AbortSignal
+  open?(this: S, cb: StreamCallback): void
+  predestroy?(this: S): void
+  destroy?(this: S, err: Error | null, cb: StreamCallback): void
+  write?(this: S, data: unknown, encoding: StreamEncoding, cb: StreamCallback): void
+  writev?(this: S, batch: { chunk: unknown; encoding: StreamEncoding }[], cb: StreamCallback): void
+  final?(this: S, cb: StreamCallback): void
+}
+```
 
-#### `ReadableStream.from(iterable)`
+#### `TransformOptions`
 
-Create a `ReadableStream` from an iterable or async iterable.
+```ts
+interface TransformOptions<S extends Transform = Transform> {
+  transform?(this: S, data: unknown, encoding: StreamEncoding, cb: StreamCallback): void
+  flush?(this: S, cb: StreamCallback): void
+  encoding?: BufferEncoding
+  highWaterMark?: number
+  read?(this: S, size: number): void
+  eagerOpen?: boolean
+  signal?: AbortSignal
+  open?(this: S, cb: StreamCallback): void
+  predestroy?(this: S): void
+  destroy?(this: S, err: Error | null, cb: StreamCallback): void
+  write?(this: S, data: unknown, encoding: StreamEncoding, cb: StreamCallback): void
+  writev?(this: S, batch: { chunk: unknown; encoding: StreamEncoding }[], cb: StreamCallback): void
+  final?(this: S, cb: StreamCallback): void
+}
+```
 
-#### `const reader = new ReadableStreamDefaultReader(stream)`
+### Types
+
+#### `StreamCallback`
+
+```ts
+interface StreamCallback {}
+```
+
+#### `ReadableFromWebOptions`
+
+```ts
+interface ReadableFromWebOptions {
+  encoding?: BufferEncoding
+  signal?: AbortSignal
+}
+```
+
+#### `ReadableToWebOptions`
+
+```ts
+interface ReadableToWebOptions {
+  strategy?: CustomQueuingStrategy
+}
+```
+
+#### `WritableFromWebOptions`
+
+```ts
+interface WritableFromWebOptions {
+  signal?: AbortSignal
+}
+```
+
+#### `DuplexFromWebOptions`
+
+```ts
+interface DuplexFromWebOptions {
+  encoding?: BufferEncoding
+  signal?: AbortSignal
+}
+```
+
+## `bare-stream/web`
+
+### ReadableStreamDefaultReader
+
+#### `new ReadableStreamDefaultReader(stream: ReadableStream)`
 
 A reader over a `ReadableStream`, exposing `closed`, `read()`, `releaseLock()`, and `cancel([reason])`.
 
-#### `const controller = new ReadableStreamDefaultController(stream)`
+**Parameters**
+
+| Parameter | Type             | Default | Description                        |
+| --------- | ---------------- | ------- | ---------------------------------- |
+| `stream`  | `ReadableStream` | —       | The `ReadableStream` to read from. |
+
+#### `ReadableStreamDefaultReader.cancel(reason?: unknown): Promise<void>`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description                                                                                            |
+| --------- | --------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| `reason?` | `unknown` | —       | Reason for the cancellation, passed to the stream's `destroy()`; defaults to a `TypeError` if omitted. |
+
+#### `ReadableStreamDefaultReader.closed: Promise<void>`
+
+#### `read(): Promise<{ value: unknown; done: boolean }>`
+
+**Returns** `Promise<{ value: unknown; done: boolean }>` — Resolves with the next chunk as `{ value, done: false }`, or `{ value: undefined, done: true }` once the stream ends; rejects with the stream's error if the stream is errored.
+
+#### `ReadableStreamDefaultReader.releaseLock(): void`
+
+### ReadableStreamDefaultController
+
+#### `new ReadableStreamDefaultController(stream: ReadableStream)`
 
 The controller passed to `start` and `pull`, exposing `desiredSize`, `enqueue(data)`, `close()`, and `error([err])`.
 
-#### `const stream = new WritableStream([underlyingSink][, queuingStrategy])`
+**Parameters**
 
-A web writable stream. `underlyingSink` may provide `start`, `write`, `close`, and `abort` methods, or be an existing `streamx` stream to wrap.
+| Parameter | Type             | Default | Description                                  |
+| --------- | ---------------- | ------- | -------------------------------------------- |
+| `stream`  | `ReadableStream` | —       | The `ReadableStream` the controller manages. |
 
-#### `stream.locked`
+#### `close(): void`
 
-#### `stream.getWriter()`
+#### `ReadableStreamDefaultController.desiredSize: number`
 
-Acquire a `WritableStreamDefaultWriter`. Throws if the stream is already locked.
+#### `ReadableStreamDefaultController.enqueue(data: unknown): void`
 
-#### `stream.abort([reason])`
+**Parameters**
 
-#### `stream.close()`
+| Parameter | Type      | Default | Description           |
+| --------- | --------- | ------- | --------------------- |
+| `data`    | `unknown` | —       | The chunk to enqueue. |
 
-#### `const writer = new WritableStreamDefaultWriter(stream)`
+#### `ReadableStreamDefaultController.error(error?: unknown): void`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description                           |
+| --------- | --------- | ------- | ------------------------------------- |
+| `error?`  | `unknown` | —       | The error to destroy the stream with. |
+
+### ReadableStream
+
+#### `new ReadableStream(underlyingSource?: UnderlyingSource, queuingStrategy?: CustomQueuingStrategy)`
+
+A web readable stream. `underlyingSource` may provide `start`, `pull`, and `cancel` methods, or be an existing `streamx` stream to wrap. `queuingStrategy` defaults to a `CountQueuingStrategy`.
+
+**Parameters**
+
+| Parameter           | Type                    | Default | Description                                                                                    |
+| ------------------- | ----------------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| `underlyingSource?` | `UnderlyingSource`      | —       | May provide `start`, `pull`, and `cancel` methods, or be an existing `streamx` stream to wrap. |
+| `queuingStrategy?`  | `CustomQueuingStrategy` | —       | Defaults to a `CountQueuingStrategy` if omitted.                                               |
+
+#### `ReadableStream.cancel(reason?: unknown): Promise<void>`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description                                                                                            |
+| --------- | --------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| `reason?` | `unknown` | —       | Reason for the cancellation, passed to the stream's `destroy()`; defaults to a `TypeError` if omitted. |
+
+#### `getReader(): ReadableStreamDefaultReader`
+
+Acquire a `ReadableStreamDefaultReader`. Throws if the stream is already locked.
+
+**Throws**
+
+- `TypeError` — thrown if the stream already has an active reader (`locked` is `true`).
+
+#### `ReadableStream.locked: boolean`
+
+#### `pipeTo(destination: WritableStream): Promise<void>`
+
+Pipe the stream to a `WritableStream`, returning a promise that resolves once piping completes.
+
+**Parameters**
+
+| Parameter     | Type             | Default | Description                        |
+| ------------- | ---------------- | ------- | ---------------------------------- |
+| `destination` | `WritableStream` | —       | The `WritableStream` to pipe into. |
+
+#### `ReadableStream.from(iterable: unknown | unknown[] | AsyncIterable<unknown>): ReadableStream`
+
+Create a `ReadableStream` from an iterable or async iterable.
+
+**Parameters**
+
+| Parameter  | Type                                             | Default | Description                                               |
+| ---------- | ------------------------------------------------ | ------- | --------------------------------------------------------- |
+| `iterable` | `unknown \| unknown[] \| AsyncIterable<unknown>` | —       | A value, array of values, or async iterable to read from. |
+
+#### `tee(): [ReadableStream, ReadableStream]`
+
+Split the stream into two independent `ReadableStream` branches.
+
+### QueuingStrategy
+
+#### `new QueuingStrategy(opts?: QueuingStrategyOptions)`
+
+**Parameters**
+
+| Parameter | Type                     | Default | Description |
+| --------- | ------------------------ | ------- | ----------- |
+| `opts?`   | `QueuingStrategyOptions` | —       | —           |
+
+#### `highWaterMark: number`
+
+#### `size(chunk: unknown): number`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description           |
+| --------- | --------- | ------- | --------------------- |
+| `chunk`   | `unknown` | —       | The chunk to measure. |
+
+### WritableStreamDefaultWriter
+
+#### `new WritableStreamDefaultWriter(stream: WritableStream)`
 
 A writer over a `WritableStream`, exposing `desiredSize`, `closed`, `ready`, `write(chunk)`, `releaseLock()`, `close()`, and `abort([reason])`.
 
-#### `const controller = new WritableStreamDefaultController(stream)`
+**Parameters**
+
+| Parameter | Type             | Default | Description                       |
+| --------- | ---------------- | ------- | --------------------------------- |
+| `stream`  | `WritableStream` | —       | The `WritableStream` to write to. |
+
+#### `WritableStreamDefaultWriter.abort(reason?: unknown): Promise<void>`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description                                                                                     |
+| --------- | --------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `reason?` | `unknown` | —       | Reason for the abort, passed to the stream's `destroy()`; defaults to a `TypeError` if omitted. |
+
+#### `WritableStreamDefaultWriter.close(): Promise<void>`
+
+**Returns** `Promise<void>` — Resolves once the stream has finished closing.
+
+#### `WritableStreamDefaultWriter.closed: Promise<void>`
+
+#### `WritableStreamDefaultWriter.desiredSize: number`
+
+#### `ready: Promise<void>`
+
+#### `WritableStreamDefaultWriter.releaseLock(): void`
+
+#### `write(chunk: unknown): Promise<void>`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description         |
+| --------- | --------- | ------- | ------------------- |
+| `chunk`   | `unknown` | —       | The chunk to write. |
+
+**Returns** `Promise<void>` — Resolves once `chunk` has been written and the stream has drained; rejects with the stream's error if the stream is or becomes errored.
+
+### WritableStreamDefaultController
+
+#### `new WritableStreamDefaultController(stream: WritableStream)`
 
 The controller passed to `start` and `write`, exposing `error([err])`.
 
-#### `const stream = new TransformStream([transformer][, writableStrategy][, readableStrategy])`
+**Parameters**
 
-A web transform stream. `transformer` may provide `start`, `transform`, and `flush` methods. Exposes `readable` and `writable` properties.
+| Parameter | Type             | Default | Description                                  |
+| --------- | ---------------- | ------- | -------------------------------------------- |
+| `stream`  | `WritableStream` | —       | The `WritableStream` the controller manages. |
 
-#### `const controller = new TransformStreamDefaultController(stream)`
+#### `error(err?: unknown): void`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description                           |
+| --------- | --------- | ------- | ------------------------------------- |
+| `err?`    | `unknown` | —       | The error to destroy the stream with. |
+
+### WritableStream
+
+#### `new WritableStream(underlyingSink?: UnderlyingSink, queuingStrategy?: CustomQueuingStrategy)`
+
+A web writable stream. `underlyingSink` may provide `start`, `write`, `close`, and `abort` methods, or be an existing `streamx` stream to wrap.
+
+**Parameters**
+
+| Parameter          | Type                    | Default | Description                                                                                             |
+| ------------------ | ----------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
+| `underlyingSink?`  | `UnderlyingSink`        | —       | May provide `start`, `write`, `close`, and `abort` methods, or be an existing `streamx` stream to wrap. |
+| `queuingStrategy?` | `CustomQueuingStrategy` | —       | —                                                                                                       |
+
+#### `WritableStream.abort(reason?: unknown): Promise<void>`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description                                                                                     |
+| --------- | --------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `reason?` | `unknown` | —       | Reason for the abort, passed to the stream's `destroy()`; defaults to a `TypeError` if omitted. |
+
+#### `WritableStream.close(): Promise<void>`
+
+**Returns** `Promise<void>` — Resolves once the stream has finished closing.
+
+#### `getWriter(): WritableStreamDefaultWriter`
+
+Acquire a `WritableStreamDefaultWriter`. Throws if the stream is already locked.
+
+**Throws**
+
+- `TypeError` — thrown if the stream already has an active writer (`locked` is `true`).
+
+#### `WritableStream.locked: boolean`
+
+### TransformStreamDefaultController
+
+#### `new TransformStreamDefaultController(stream: TransformStream)`
 
 The controller passed to `start`, `transform`, and `flush`, exposing `desiredSize`, `enqueue(data)`, `error([err])`, and `terminate()`.
 
-#### `const strategy = new CountQueuingStrategy([options])`
+**Parameters**
 
-A queuing strategy that counts each chunk as size `1`. Options include:
+| Parameter | Type              | Default | Description                                   |
+| --------- | ----------------- | ------- | --------------------------------------------- |
+| `stream`  | `TransformStream` | —       | The `TransformStream` the controller manages. |
 
-```js
-options = {
-  highWaterMark: 1
+#### `TransformStreamDefaultController.desiredSize: number`
+
+#### `TransformStreamDefaultController.enqueue(data: unknown): void`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description           |
+| --------- | --------- | ------- | --------------------- |
+| `data`    | `unknown` | —       | The chunk to enqueue. |
+
+#### `TransformStreamDefaultController.error(error?: unknown): void`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description                           |
+| --------- | --------- | ------- | ------------------------------------- |
+| `error?`  | `unknown` | —       | The error to destroy the stream with. |
+
+#### `terminate(): void`
+
+### TransformStream
+
+#### `TransformStream`
+
+```ts
+new TransformStream(transformer?: Transformer, writableStrategy?: CustomQueuingStrategy, readableStrategy?: CustomQueuingStrategy)
+```
+
+A web transform stream. `transformer` may provide `start`, `transform`, and `flush` methods. Exposes `readable` and `writable` properties.
+
+**Parameters**
+
+| Parameter           | Type                    | Default | Description                                            |
+| ------------------- | ----------------------- | ------- | ------------------------------------------------------ |
+| `transformer?`      | `Transformer`           | —       | May provide `start`, `transform`, and `flush` methods. |
+| `writableStrategy?` | `CustomQueuingStrategy` | —       | —                                                      |
+| `readableStrategy?` | `CustomQueuingStrategy` | —       | —                                                      |
+
+#### `readable: ReadableStream`
+
+#### `writable: WritableStream`
+
+### Functions
+
+#### `isReadableStream(value: unknown): value is ReadableStream`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description        |
+| --------- | --------- | ------- | ------------------ |
+| `value`   | `unknown` | —       | The value to test. |
+
+#### `isReadableStreamErrored(stream: ReadableStream): boolean`
+
+**Parameters**
+
+| Parameter | Type             | Default | Description         |
+| --------- | ---------------- | ------- | ------------------- |
+| `stream`  | `ReadableStream` | —       | The stream to test. |
+
+#### `isReadableStreamDisturbed(stream: ReadableStream): boolean`
+
+**Parameters**
+
+| Parameter | Type             | Default | Description         |
+| --------- | ---------------- | ------- | ------------------- |
+| `stream`  | `ReadableStream` | —       | The stream to test. |
+
+#### `isWritableStream(value: unknown): value is WritableStream`
+
+**Parameters**
+
+| Parameter | Type      | Default | Description        |
+| --------- | --------- | ------- | ------------------ |
+| `value`   | `unknown` | —       | The value to test. |
+
+#### `isTransformStream(value: unknown): value is TransformStream`
+
+Return `true` if `value` is a web `TransformStream`.
+
+**Parameters**
+
+| Parameter | Type      | Default | Description        |
+| --------- | --------- | ------- | ------------------ |
+| `value`   | `unknown` | —       | The value to test. |
+
+### Types
+
+#### `UnderlyingSource`
+
+```ts
+interface UnderlyingSource<S extends ReadableStream = ReadableStream> {
+  start?(this: S, controller: ReadableStreamDefaultController): void
+  pull?(this: S, controller: ReadableStreamDefaultController): void
+  cancel?(this: S, reason?: unknown): void
 }
 ```
 
-#### `const strategy = new ByteLengthQueuingStrategy([options])`
+#### `CustomQueuingStrategy`
 
-A queuing strategy that measures each chunk by its `byteLength`. Options include:
-
-```js
-options = {
-  highWaterMark: 16384
+```ts
+interface CustomQueuingStrategy {
+  highWaterMark?: number
+  size?: (chunk: unknown) => number
 }
 ```
 
-#### `isReadableStream(value)`
+#### `QueuingStrategyOptions`
 
-#### `isReadableStreamErrored(stream)`
-
-#### `isReadableStreamDisturbed(stream)`
-
-#### `isWritableStream(value)`
-
-#### `isTransformStream(value)`
-
-Predicates for web streams. Each returns a boolean.
-
-### Global
-
-Requiring `bare-stream/global` installs the web stream classes as globals, matching the browser and Node.js environments:
-
-```js
-require('bare-stream/global')
-
-const stream = new ReadableStream()
+```ts
+interface QueuingStrategyOptions {
+  highWaterMark?: number
+}
 ```
+
+#### `UnderlyingSink`
+
+```ts
+interface UnderlyingSink<S extends WritableStream = WritableStream> {
+  start?(this: S, controller: WritableStreamDefaultController): void
+  write?(this: S, chunk: unknown, controller: WritableStreamDefaultController): void
+  close?(this: S): void
+  abort?(this: S, reason?: unknown): void
+}
+```
+
+#### `Transformer`
+
+```ts
+interface Transformer<S extends TransformStream = TransformStream> {
+  start?(this: S, controller: TransformStreamDefaultController): void
+  transform?(this: S, chunk: unknown, controller: TransformStreamDefaultController): void
+  flush?(this: S, controller: TransformStreamDefaultController): void
+}
+```
+
+### Classes
+
+#### `CountQueuingStrategy`
+
+```ts
+class CountQueuingStrategy {}
+```
+
+#### `ByteLengthQueuingStrategy`
+
+```ts
+class ByteLengthQueuingStrategy {}
+```
+
+<!-- bare-refgen:api end -->
 
 ## License
 

@@ -2,12 +2,14 @@ export interface ReadableStreamDefaultReader {
   readonly closed: Promise<void>
 
   /**
-   * @returns Resolves with the next chunk as `{ value, done: false }`, or `{ value: undefined, done: true }` once the stream ends; rejects with the stream's error if the stream is errored.
+   * @returns Resolves with the next chunk as `{ value, done: false }`, or `{ value: undefined,
+   * done: true }` once the stream ends; rejects with the stream's error if the stream is errored.
    */
   read(): Promise<{ value: unknown; done: boolean }>
   releaseLock(): void
   /**
-   * @param reason - Reason for the cancellation, passed to the stream's `destroy()`; defaults to a `TypeError` if omitted.
+   * @param reason - Reason for the cancellation, passed to the stream's `destroy()`; defaults to a
+   * `TypeError` if omitted.
    */
   cancel(reason?: unknown): Promise<void>
 }
@@ -71,7 +73,8 @@ export interface ReadableStream extends AsyncIterable<unknown> {
    */
   getReader(): ReadableStreamDefaultReader
   /**
-   * @param reason - Reason for the cancellation, passed to the stream's `destroy()`; defaults to a `TypeError` if omitted.
+   * @param reason - Reason for the cancellation, passed to the stream's `destroy()`; defaults to a
+   * `TypeError` if omitted.
    */
   cancel(reason?: unknown): Promise<void>
   /** Split the stream into two independent `ReadableStream` branches. */
@@ -84,7 +87,8 @@ export interface ReadableStream extends AsyncIterable<unknown> {
 
 export class ReadableStream {
   /**
-   * @param underlyingSource - May provide `start`, `pull`, and `cancel` methods, or be an existing `streamx` stream to wrap.
+   * @param underlyingSource - May provide `start`, `pull`, and `cancel` methods, or be an existing
+   * `streamx` stream to wrap.
    * @param queuingStrategy - Defaults to a `CountQueuingStrategy` if omitted.
    */
   constructor(underlyingSource?: UnderlyingSource, queuingStrategy?: CustomQueuingStrategy)
@@ -141,7 +145,8 @@ export interface WritableStreamDefaultWriter {
 
   /**
    * @param chunk - The chunk to write.
-   * @returns Resolves once `chunk` has been written and the stream has drained; rejects with the stream's error if the stream is or becomes errored.
+   * @returns Resolves once `chunk` has been written and the stream has drained; rejects with the
+   * stream's error if the stream is or becomes errored.
    */
   write(chunk: unknown): Promise<void>
   releaseLock(): void
@@ -150,7 +155,8 @@ export interface WritableStreamDefaultWriter {
    */
   close(): Promise<void>
   /**
-   * @param reason - Reason for the abort, passed to the stream's `destroy()`; defaults to a `TypeError` if omitted.
+   * @param reason - Reason for the abort, passed to the stream's `destroy()`; defaults to a
+   * `TypeError` if omitted.
    */
   abort(reason?: unknown): Promise<void>
 }
@@ -201,7 +207,8 @@ export interface WritableStream extends AsyncIterable<unknown> {
    */
   getWriter(): WritableStreamDefaultWriter
   /**
-   * @param reason - Reason for the abort, passed to the stream's `destroy()`; defaults to a `TypeError` if omitted.
+   * @param reason - Reason for the abort, passed to the stream's `destroy()`; defaults to a
+   * `TypeError` if omitted.
    */
   abort(reason?: unknown): Promise<void>
   /**
@@ -212,7 +219,8 @@ export interface WritableStream extends AsyncIterable<unknown> {
 
 export class WritableStream {
   /**
-   * @param underlyingSink - May provide `start`, `write`, `close`, and `abort` methods, or be an existing `streamx` stream to wrap.
+   * @param underlyingSink - May provide `start`, `write`, `close`, and `abort` methods, or be an
+   * existing `streamx` stream to wrap.
    */
   constructor(underlyingSink?: UnderlyingSink, queuingStrategy?: CustomQueuingStrategy)
 }
@@ -245,16 +253,19 @@ export class TransformStreamDefaultController {
 
 export interface Transformer<S extends TransformStream = TransformStream> {
   /**
-   * @param controller - The `TransformStreamDefaultController` to enqueue output or signal errors through.
+   * @param controller - The `TransformStreamDefaultController` to enqueue output or signal errors
+   * through.
    */
   start?(this: S, controller: TransformStreamDefaultController): void
   /**
    * @param chunk - The chunk to transform.
-   * @param controller - The `TransformStreamDefaultController` to enqueue output or signal errors through.
+   * @param controller - The `TransformStreamDefaultController` to enqueue output or signal errors
+   * through.
    */
   transform?(this: S, chunk: unknown, controller: TransformStreamDefaultController): void
   /**
-   * @param controller - The `TransformStreamDefaultController` to enqueue output or signal errors through.
+   * @param controller - The `TransformStreamDefaultController` to enqueue output or signal errors
+   * through.
    */
   flush?(this: S, controller: TransformStreamDefaultController): void
 }

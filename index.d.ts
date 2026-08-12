@@ -58,7 +58,8 @@ declare class Stream {}
 interface ReadableEvents extends StreamEvents {
   data: [data: unknown]
   /**
-   * Signal that no more data will be written. If `data` is provided it is written first. The optional `cb` is called once the stream has finished.
+   * Signal that no more data will be written. If `data` is provided it is written first. The
+   * optional `cb` is called once the stream has finished.
    * @param cb - Called with an error, or `null`, once the stream has finished.
    */
   end: []
@@ -70,7 +71,8 @@ interface ReadableOptions<S extends Readable = Readable> extends StreamOptions<S
   encoding?: BufferEncoding
   highWaterMark?: number
   /**
-   * @returns Resolves with the next chunk as `{ value, done: false }`, or `{ value: undefined, done: true }` once the stream ends; rejects with the stream's error if the stream is errored.
+   * @returns Resolves with the next chunk as `{ value, done: false }`, or `{ value: undefined,
+   * done: true }` once the stream ends; rejects with the stream's error if the stream is errored.
    */
   read?(this: S, size: number): void
 }
@@ -125,7 +127,8 @@ declare class Readable<M extends ReadableEvents = ReadableEvents> extends Stream
   constructor(opts?: ReadableOptions)
 
   /**
-   * Create a readable stream from `data`, which may be a value, an array of values, or an async iterable.
+   * Create a readable stream from `data`, which may be a value, an array of values, or an async
+   * iterable.
    * @param data - A value, array of values, or async iterable to read from.
    */
   static from(data: unknown | unknown[] | AsyncIterable<unknown>, opts?: ReadableOptions): Readable
@@ -143,14 +146,16 @@ declare class Readable<M extends ReadableEvents = ReadableEvents> extends Stream
   /**
    * Convert a web `ReadableStream` into a `Readable`.
    * @param readableStream - The web `ReadableStream` to convert.
-   * @param opts - Options for the conversion; supports `encoding` and `signal`, matching `ReadableOptions`.
+   * @param opts - Options for the conversion; supports `encoding` and `signal`, matching
+   * `ReadableOptions`.
    */
   static fromWeb(readableStream: ReadableStream, opts?: ReadableFromWebOptions): Readable
 
   /**
    * Convert a `Readable` into a web `ReadableStream`.
    * @param readable - The `Readable` to convert.
-   * @param opts - Options for the conversion; `strategy` is a custom queuing strategy passed through to the `ReadableStream` constructor.
+   * @param opts - Options for the conversion; `strategy` is a custom queuing strategy passed
+   * through to the `ReadableStream` constructor.
    */
   static toWeb(readable: Readable, opts?: ReadableToWebOptions): ReadableStream
 }
@@ -209,7 +214,9 @@ interface Writable<M extends WritableEvents = WritableEvents> extends Stream<M> 
   readonly errored: Error | null
 
   /**
-   * Write `data` to the stream. If `data` is a string, it is encoded using `encoding`, defaulting to `'utf8'`. Returns `false` if the stream is backpressured. The optional `cb` is called once the write has drained.
+   * Write `data` to the stream. If `data` is a string, it is encoded using `encoding`, defaulting
+   * to `'utf8'`. Returns `false` if the stream is backpressured. The optional `cb` is called once
+   * the write has drained.
    * @param data - Data to write. If a string, it is encoded using `encoding`.
    * @param encoding - Encoding used to convert a string `data` to a `Buffer`; defaults to `'utf8'`.
    * @param cb - Called with an error, or `null`, once the write has drained.
@@ -218,7 +225,8 @@ interface Writable<M extends WritableEvents = WritableEvents> extends Stream<M> 
   write(data: unknown, cb?: StreamCallback): boolean
 
   /**
-   * Signal that no more data will be written. If `data` is provided it is written first. The optional `cb` is called once the stream has finished.
+   * Signal that no more data will be written. If `data` is provided it is written first. The
+   * optional `cb` is called once the stream has finished.
    * @param cb - Called with an error, or `null`, once the stream has finished.
    */
   end(cb?: StreamCallback): this
@@ -267,12 +275,16 @@ interface DuplexFromWebOptions extends ReadableFromWebOptions, WritableFromWebOp
 interface Duplex<M extends DuplexEvents = DuplexEvents> extends Readable<M>, Writable<M> {}
 
 declare class Duplex<M extends DuplexEvents = DuplexEvents> extends Stream<M> {
-  /** A stream that is both readable and writable. Accepts the combined options of `Readable` and `Writable`. */
+  /**
+   * A stream that is both readable and writable. Accepts the combined options of `Readable` and
+   * `Writable`.
+   */
   constructor(opts?: DuplexOptions)
 
   /**
    * Convert a pair of web `ReadableStream` and `WritableStream` into a `Duplex`.
-   * @param opts - Options for the conversion; combines the `Readable` and `Writable` conversion options (`encoding`, `signal`).
+   * @param opts - Options for the conversion; combines the `Readable` and `Writable` conversion
+   * options (`encoding`, `signal`).
    */
   static fromWeb(
     { readable: ReadableStream, writable: Writable },
@@ -338,8 +350,11 @@ declare namespace Stream {
   }
 
   /**
-   * Pipe a series of streams together, propagating errors and cleaning up on completion. `streams` is a `Readable` source, zero or more `Duplex` transforms, and a `Writable` destination. Returns the destination stream. `cb` is called when the pipeline finishes or errors.
-   * @param streams - A `Readable` source, zero or more `Duplex` transforms, and a `Writable` destination.
+   * Pipe a series of streams together, propagating errors and cleaning up on completion. `streams`
+   * is a `Readable` source, zero or more `Duplex` transforms, and a `Writable` destination. Returns
+   * the destination stream. `cb` is called when the pipeline finishes or errors.
+   * @param streams - A `Readable` source, zero or more `Duplex` transforms, and a `Writable`
+   * destination.
    * @param cb - Called with an error, or `null`, once the pipeline finishes or errors.
    */
   export function pipeline<S extends Writable>(streams: Pipeline<S>, cb?: StreamCallback): S
@@ -349,13 +364,15 @@ declare namespace Stream {
   export function pipeline<S extends Writable>(...args: [...Pipeline<S>, cb: StreamCallback]): S
 
   /**
-   * Create a pair of linked `Duplex` streams. Data written to `a` is readable from `b` and vice versa. `options` are passed to each side.
+   * Create a pair of linked `Duplex` streams. Data written to `a` is readable from `b` and vice
+   * versa. `options` are passed to each side.
    * @param opts - Passed to both ends of the pair.
    */
   export function duplexPair(opts?: DuplexOptions): [Duplex, Duplex]
 
   /**
-   * Invoke `cb` once `stream` is no longer readable or writable, or has errored. Returns a function that detaches the listeners.
+   * Invoke `cb` once `stream` is no longer readable or writable, or has errored. Returns a function
+   * that detaches the listeners.
    * @param stream - The stream to wait on.
    * @param opts - Set `cleanup: true` to detach the listeners automatically once `cb` runs.
    * @param cb - Called with an error, or `null`, once `stream` finishes.
@@ -411,7 +428,8 @@ declare namespace Stream {
   export function getStreamError(stream: Stream, opts?: { all?: boolean }): Error | null
 
   /**
-   * Destroy `stream` when `signal` aborts, using `signal.reason` as the destruction error. Returns `stream`.
+   * Destroy `stream` when `signal` aborts, using `signal.reason` as the destruction error. Returns
+   * `stream`.
    * @param signal - The `AbortSignal` that destroys `stream` on abort.
    * @param stream - The stream to destroy when `signal` aborts.
    */

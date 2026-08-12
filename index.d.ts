@@ -56,14 +56,13 @@ interface Stream<M extends StreamEvents = StreamEvents> extends EventEmitter<M> 
 declare class Stream {}
 
 interface ReadableEvents extends StreamEvents {
+  /** Emitted with each chunk of data read from the stream. */
   data: [data: unknown]
-  /**
-   * Signal that no more data will be written. If `data` is provided it is written first. The
-   * optional `cb` is called once the stream has finished.
-   * @param cb - Called with an error, or `null`, once the stream has finished.
-   */
+  /** Emitted once the readable side has ended and no more data will be read. */
   end: []
+  /** Emitted when data is available to be read from the stream. */
   readable: []
+  /** Emitted with the destination when the stream begins piping into it. */
   piping: [dest: Writable]
 }
 
@@ -161,12 +160,11 @@ declare class Readable<M extends ReadableEvents = ReadableEvents> extends Stream
 }
 
 interface WritableEvents extends StreamEvents {
+  /** Emitted when the write buffer has drained and writing can resume. */
   drain: []
+  /** Emitted once the writable side has finished and all writes have flushed. */
   finish: []
-  /**
-   * @param dest - The destination stream to write into.
-   * @param cb - Called with an error, or `null` on success.
-   */
+  /** Emitted with the source readable when a stream begins piping into this stream. */
   pipe: [src: Readable]
 }
 

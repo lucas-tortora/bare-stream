@@ -25,7 +25,7 @@ stream.on('data', (data) => console.log(data))
 
 ## API
 
-See the [full API reference](https://docs.pears.com/reference/bare/modules/bare-stream).
+See the [`bare-stream` reference](https://docs.pears.com/reference/bare/modules/bare-stream).
 
 ## License
 

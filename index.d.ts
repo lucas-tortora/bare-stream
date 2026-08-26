@@ -17,6 +17,7 @@ interface StreamEvents extends EventMap {
 
 interface StreamOptions<S extends Stream = Stream> {
   eagerOpen?: boolean
+  highWaterMark?: number
   signal?: AbortSignal
   /**
    * @param cb - Called with an error, or `null`, once opening finishes.
@@ -68,7 +69,6 @@ interface ReadableEvents extends StreamEvents {
 
 interface ReadableOptions<S extends Readable = Readable> extends StreamOptions<S> {
   encoding?: BufferEncoding
-  highWaterMark?: number
   /**
    * @returns Resolves with the next chunk as `{ value, done: false }`, or `{ value: undefined,
    * done: true }` once the stream ends; rejects with the stream's error if the stream is errored.
